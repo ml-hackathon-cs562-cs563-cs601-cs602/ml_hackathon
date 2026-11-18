@@ -6,6 +6,8 @@ from pyproj import Transformer
 # Dataset location
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_ROOT = PROJECT_ROOT / "data" / "raw" / "Student folder"
+if not DATA_ROOT.exists():
+    DATA_ROOT = PROJECT_ROOT / "data" / "raw"
 
 VALID_PARTITIONS = {"train", "student_test"}
 

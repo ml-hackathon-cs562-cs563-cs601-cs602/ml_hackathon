@@ -1,4 +1,20 @@
-# Intended packages (pin exact versions when first installed, then commit):
-# numpy, pandas, scikit-learn, lightgbm, pyproj, shapely, pyarrow, pyyaml,
-# optuna, folium, matplotlib, seaborn, fastapi, uvicorn, streamlit, requests, pytest.
-# Owner: C (shared harness). Confirm Python version with team first.
+# Intended packages for PathSnap
+# Owner: Member C (shared harness)
+
+numpy>=1.26.0
+pandas>=2.0.0
+scipy>=1.11.0
+scikit-learn>=1.4.0
+joblib>=1.3.0
+pyyaml>=6.0.0
+pyproj>=3.6.0
+shapely>=2.0.0
+pyarrow>=14.0.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+optuna>=3.6.0
+xgboost>=2.0.0
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+folium>=0.16.0
+pytest>=8.0.0

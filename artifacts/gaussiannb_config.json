@@ -1,0 +1,12 @@
+{
+  "algorithm_family": "probabilistic generative classifier",
+  "initial_hyperparameters": {
+    "var_smoothing": 1e-09
+  },
+  "preprocessing": [
+    "SimpleImputer(strategy=median)"
+  ],
+  "objective": "maximum likelihood estimation of class priors and per-feature Gaussian parameters",
+  "assumption": "features are conditionally independent given the class",
+  "probability_caveat": "Naive Bayes probabilities can be poorly calibrated when feature independence is violated; Log Loss is measured rather than assumed good."
+}

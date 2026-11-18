@@ -1,3 +1,44 @@
-# Shallow or deep MLP config. Family: neural network.
-# Only model that produces epoch-wise histories, so only this model gets loss curves.
-# Owner: D.
+# MLP (Multi-Layer Perceptron) configuration for PathSnap candidate scoring.
+# Family: Neural network
+# Owner: Member D
+# Note: This is the ONLY model with epoch-wise histories, so it gets loss curves.
+
+# Model parameters
+params:
+  # Architecture (shallow network for tabular data)
+  hidden_layer_sizes: [64, 32]  # 2 hidden layers
+  
+  # Activation and optimization
+  activation: relu
+  solver: adam
+  
+  # Regularization
+  alpha: 0.0001  # L2 penalty
+  
+  # Learning rate
+  learning_rate: constant
+  learning_rate_init: 0.001
+  
+  # Training
+  batch_size: 256
+  max_iter: 100
+  tol: 1.0e-4  # Tolerance for early stopping
+  
+  # Early stopping (disabled in sklearn, manual implementation)
+  early_stopping: false  # We implement manual early stopping
+  n_iter_no_change: 10
+  
+  # Reproducibility
+  random_state: 42
+
+# Feature scaling (MLP requires scaled features)
+feature_scaling:
+  method: StandardScaler
+  fit_on_train_only: true  # Never fit on validation/test
+
+# Loss tracking
+save_loss_history: true
+loss_history_path: results/mlp_loss_history.csv
+
+# Training settings
+verbose: false  # Set to true for training output

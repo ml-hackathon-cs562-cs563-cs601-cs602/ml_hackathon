@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><title>PathSnap Evaluator UI</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>body{margin:0;font-family:system-ui,sans-serif;display:flex;height:100vh}#side{width:340px;padding:14px;overflow:auto;border-right:1px solid #ddd}
+#map{flex:1}button{margin:3px;padding:7px 11px;cursor:pointer;border:1px solid #888;border-radius:6px;background:#f4f4f4}button.sel{background:#2a6;color:#fff}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #ddd;padding:4px 6px;text-align:left}input{width:100%;box-sizing:border-box;padding:5px}
+.leg span{display:inline-block;width:14px;height:4px;margin-right:6px;vertical-align:middle}</style></head><body>
+<div id="side"><h2>PathSnap</h2>
+<label>API URL (Laptop 1)</label><input id="api" value="http://localhost:8000"><button onclick="load()">Load trips</button>
+<h4>Evaluation trips</h4><div id="trips"></div><div id="status" style="margin:8px 0;color:#555"></div><div id="res"></div>
+<div class="leg"><p><span style="background:#1f77ff"></span>GPS observations<br><span style="background:#e41a1c"></span>Predicted route (classifier + HMM)</p></div></div>
+<div id="map"></div>
+<script>
+const map=L.map('map').setView([52.95,-1.85],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+let layers=[];const $=id=>document.getElementById(id);
+async function load(){try{const r=await fetch($('api').value+'/trips');const j=await r.json();
+$('trips').innerHTML=j.trips.map(t=>`<button onclick="run('${t}',this)">${t}</button>`).join('');$('status').textContent=j.trips.length+' trips available'}catch(e){$('status').textContent='Cannot reach API: '+e}}
+async function run(t,b){document.querySelectorAll('#trips button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');$('status').textContent='Running pipeline on '+t+' ...';
+try{const r=await fetch($('api').value+'/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({trip_id:t})});const j=await r.json();if(!r.ok)throw j.detail;
+layers.forEach(l=>map.removeLayer(l));layers=[];
+const g=L.layerGroup(j.gps.filter((_,i)=>i%3==0).map(p=>L.circleMarker(p,{radius:2,color:'#1f77ff',weight:1}))).addTo(map);
+const rt=L.layerGroup(j.predicted_route.map(s=>L.polyline(s,{color:'#e41a1c',weight:4}))).addTo(map);layers=[g,rt];map.fitBounds(L.latLngBounds(j.gps));
+const m=j.metrics,f=x=>(100*x).toFixed(2)+'%';
+$('status').textContent='Done in '+j.inference_seconds+' s';
+$('res').innerHTML=`<table><tr><th>Trip ${j.trip_id}</th><th>Classifier only</th><th>Classifier + HMM</th></tr>
+<tr><td>Top-1 accuracy</td><td>${f(m.classifier_only.top1_accuracy)}</td><td><b>${f(m.classifier_plus_hmm.top1_accuracy)}</b></td></tr>
+<tr><td>Route continuity</td><td>${f(m.classifier_only.route_continuity)}</td><td>${f(m.classifier_plus_hmm.route_continuity)}</td></tr>
+<tr><td>Route arc F1</td><td colspan=2>${f(m.route_arc_f1)} (P ${f(m.route_arc_precision)} / R ${f(m.route_arc_recall)})</td></tr>
+<tr><td>GPS points</td><td colspan=2>${j.n_gps}</td></tr></table>`}catch(e){$('status').textContent='Error: '+JSON.stringify(e)}}
+load();
+</script></body></html>

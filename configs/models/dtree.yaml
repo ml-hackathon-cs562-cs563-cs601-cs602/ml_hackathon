@@ -1,4 +1,17 @@
-# Decision Tree config. Family: tree-based.
-# Replaces Gaussian Naive Bayes so the five models come from five distinct families.
-# Team must confirm this swap (see .agents/context/open_questions.md).
-# Owner: C.
+# Decision Tree configuration for PathSnap candidate scoring.
+# Family: Tree-based classifier
+# Owner: Member C
+
+model_name: DecisionTree
+algorithm_family: tree-based
+
+params:
+  max_depth: 10
+  min_samples_split: 4
+  min_samples_leaf: 5
+  class_weight: balanced
+  random_state: 42
+
+preprocessing:
+  imputation: median
+objective: Gini impurity reduction at each split

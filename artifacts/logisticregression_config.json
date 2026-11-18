@@ -1,0 +1,16 @@
+{
+  "model_name": "LogisticRegression",
+  "algorithm_family": "linear probabilistic classifier",
+  "params": {
+    "C": 1.0,
+    "solver": "lbfgs",
+    "max_iter": 500,
+    "class_weight": "balanced",
+    "random_state": 42
+  },
+  "preprocessing": {
+    "imputation": "median",
+    "scaling": "standard"
+  },
+  "objective": "binary logistic negative log-likelihood (cross-entropy), optimized by lbfgs"
+}
