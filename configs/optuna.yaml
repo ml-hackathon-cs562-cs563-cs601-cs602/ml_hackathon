@@ -1,5 +1,103 @@
-# Bayesian (TPE) hyperparameter search for the chosen model.
-# search_space: justified ranges per hyperparameter.
-# objective: CV macro F1 (state the choice and reason in the report).
-# n_trials: about 30 to 50, agreed by team.
-# Owner: D. Must use only training trips, never student or evaluator trips to choose the space.
+# Bayesian (TPE) hyperparameter search configuration.
+# Owner: Member D
+# Note: Search space must be justified BEFORE running any tuning.
+# Uses only training trips (80 trips), never student or evaluator trips.
+
+# Study settings
+study_name: lgbm_optimization
+direction: maximize  # Maximize CV macro F1
+sampler: TPESampler  # Tree-structured Parzen Estimator
+seed: 42
+
+# Number of trials
+n_trials: 40  # 30-50 trials as specified in requirements
+timeout: null  # No time limit
+
+# Objective function
+objective_metric: cv_macro_f1  # Primary metric for optimization
+secondary_metrics:
+  - log_loss
+  - top1_accuracy
+
+# Cross-validation
+n_folds: 5
+group_by: trip_id  # GroupKFold
+
+# Search space justification
+# These ranges are based on:
+# 1. LightGBM documentation recommendations
+# 2. Common ranges for gradient boosting on tabular data
+# 3. Dataset characteristics: ~1-3M samples, ~10-20 features
+# 4. Binary classification task (candidate scoring)
+search_space:
+  num_leaves:
+    type: int
+    low: 15
+    high: 127
+    reason: "Controls model complexity. Lower values prevent overfitting on small datasets. Range based on typical values for tabular data."
+  
+  max_depth:
+    type: int
+    low: -1
+    high: 15
+    reason: "-1 means no limit (leaf-wise). Positive values limit tree depth. Shallow trees (3-6) often generalize better."
+  
+  learning_rate:
+    type: float
+    low: 0.01
+    high: 0.3
+    log: true
+    reason: "Step size shrinkage. Lower values need more trees but often generalize better. 0.01-0.3 covers typical range."
+  
+  n_estimators:
+    type: int
+    low: 50
+    high: 300
+    reason: "Number of boosting rounds. Higher values with early stopping. 50-300 balances computational cost and performance."
+  
+  min_child_samples:
+    type: int
+    low: 5
+    high: 50
+    reason: "Minimum samples per leaf. Higher values prevent overfitting. 5-50 covers typical range for varied dataset sizes."
+  
+  subsample:
+    type: float
+    low: 0.6
+    high: 1.0
+    reason: "Row subsampling ratio. Values <1.0 add randomness and reduce overfitting. 0.6-1.0 is typical."
+  
+  colsample_bytree:
+    type: float
+    low: 0.6
+    high: 1.0
+    reason: "Column subsampling ratio. Values <1.0 add randomness. 0.6-1.0 is typical for tabular data."
+  
+  reg_alpha:
+    type: float
+    low: 1.0e-8
+    high: 10.0
+    log: true
+    reason: "L1 regularization. Helps with feature selection. Log scale captures wide range of strengths."
+  
+  reg_lambda:
+    type: float
+    low: 1.0e-8
+    high: 10.0
+    log: true
+    reason: "L2 regularization. Prevents overfitting. Log scale captures wide range of strengths."
+
+# Pruning (optional, for efficiency)
+pruning:
+  enabled: false  # Disabled for stability
+  n_warmup_steps: 5
+  interval_steps: 1
+
+# Output paths
+output:
+  study_db: hpo/studies/study.pkl
+  trials_csv: hpo/studies/trials.csv
+  results_csv: results/optuna_trials.csv
+
+# Computational cost tracking
+track_compute_cost: true

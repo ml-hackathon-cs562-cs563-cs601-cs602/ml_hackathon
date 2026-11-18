@@ -1,2 +1,38 @@
-# LightGBM config. Family: boosting.
-# Owner: D.
+# LightGBM configuration for PathSnap candidate scoring.
+# Family: Boosting (gradient boosting decision trees)
+# Owner: Member D
+
+# Model parameters
+params:
+  # Core parameters
+  objective: binary
+  metric: binary_logloss
+  boosting_type: gbdt
+  
+  # Tree structure
+  num_leaves: 31
+  max_depth: -1  # -1 means no limit
+  
+  # Learning
+  learning_rate: 0.1
+  n_estimators: 100
+  
+  # Regularization
+  min_child_samples: 20
+  subsample: 0.8
+  colsample_bytree: 0.8
+  reg_alpha: 0.0
+  reg_lambda: 0.0
+  
+  # System
+  random_state: 42
+  n_jobs: -1
+  verbose: -1
+
+# Early stopping
+early_stopping_rounds: 10
+verbose_early_stopping: false
+log_evaluation_period: 0  # 0 = silent
+
+# Training settings
+use_cv_early_stopping: true  # Use CV fold validation for early stopping
