@@ -31,7 +31,7 @@ MANIFEST
 # Virtual Environments
 # --------------------------------------------
 .env
-.venv
+.venv/
 env/
 venv/
 ENV/
@@ -49,8 +49,8 @@ venv.bak/
 # Data Files (Raw and Interim)
 # --------------------------------------------
 # Raw data - check with organizers before committing
-data/raw/
-data/interim/
+data/raw/*
+data/interim/*
 
 # Features - generated from raw data
 data/features/*.parquet
@@ -64,7 +64,7 @@ data/features/*.feather
 # API Server Data (EVALUATOR GROUND TRUTH)
 # --------------------------------------------
 # CRITICAL: Never commit evaluator ground truth
-api/server_data/
+api/server_data/*
 !api/server_data/.gitkeep
 
 # --------------------------------------------
@@ -134,29 +134,22 @@ artifacts/*.scaler
 *.swo
 *~
 .DS_Store
-Thumbs.db
-
-# --------------------------------------------
-# Secrets and Credentials
-# --------------------------------------------
-.env
-.env.local
-.env.*.local
-*.key
-*.pem
-credentials.json
-secrets.json
-
-# --------------------------------------------
-# OS Generated
-# --------------------------------------------
-.DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# --------------------------------------------
+# Secrets and Credentials
+# --------------------------------------------
+.env.local
+.env.*.local
+*.key
+*.pem
+credentials.json
+secrets.json
 
 # --------------------------------------------
 # Temporary and Cache
@@ -179,7 +172,6 @@ site/
 # --------------------------------------------
 # Specific Project Files
 # --------------------------------------------
-# Keep these directories in git but ignore contents
 !data/raw/.gitkeep
 !data/interim/.gitkeep
 !data/features/.gitkeep
