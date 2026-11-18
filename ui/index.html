@@ -1,32 +1,227 @@
-<!doctype html><html><head><meta charset="utf-8"><title>PathSnap Evaluator UI</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>body{margin:0;font-family:system-ui,sans-serif;display:flex;height:100vh}#side{width:340px;padding:14px;overflow:auto;border-right:1px solid #ddd}
-#map{flex:1}button{margin:3px;padding:7px 11px;cursor:pointer;border:1px solid #888;border-radius:6px;background:#f4f4f4}button.sel{background:#2a6;color:#fff}
-table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #ddd;padding:4px 6px;text-align:left}input{width:100%;box-sizing:border-box;padding:5px}
-.leg span{display:inline-block;width:14px;height:4px;margin-right:6px;vertical-align:middle}</style></head><body>
-<div id="side"><h2>PathSnap</h2>
-<label>API URL (Laptop 1)</label><input id="api" value="http://localhost:8000"><button onclick="load()">Load trips</button>
-<h4>Evaluation trips</h4><div id="trips"></div><div id="status" style="margin:8px 0;color:#555"></div><div id="res"></div>
-<div class="leg"><p><span style="background:#1f77ff"></span>GPS observations<br><span style="background:#e41a1c"></span>Predicted route (classifier + HMM)</p></div></div>
-<div id="map"></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PathSnap evaluator</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#eef1ee;--panel:#fbfcfb;--ink:#17231f;--mute:#5d6e67;--line:#d3dcd7;--gps:#1f5fd6;--route:#d9381e;--ok:#1b7a4b;--bad:#b3261e;--sel:#17231f;--selink:#fbfcfb}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1714;--panel:#17231f;--ink:#e6efe9;--mute:#93a69c;--line:#2b3b35;--gps:#6ea0ff;--route:#ff6b4d;--ok:#5fd394;--bad:#ff8a80;--sel:#e6efe9;--selink:#0f1714}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;display:grid;grid-template-columns:340px 1fr;grid-template-rows:100%}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+h1{font:700 26px/1.1 Georgia,"Times New Roman",serif;margin:0;letter-spacing:-.3px}
+h2{font:600 14px/1.2 Georgia,serif;margin:0 0 8px;color:var(--mute)}
+p.sub{margin:4px 0 0;color:var(--mute);font-size:13px}
+label{display:block;font-size:13px;color:var(--mute);margin-bottom:4px}
+input[type=text]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+.row{display:flex;gap:8px;align-items:center}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 12px;border-radius:6px}
+button:hover{border-color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gps);outline-offset:2px}
+button.primary{background:var(--sel);color:var(--selink);border-color:var(--sel)}
+#status{font-size:13px;display:flex;align-items:center;gap:6px;margin-top:8px;min-height:20px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--mute)}
+.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}
+#trips{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#trips button{text-align:left;font-variant-numeric:tabular-nums}
+#trips button small{display:block;color:var(--mute);font-size:11px}
+#trips button[aria-pressed=true]{background:var(--sel);color:var(--selink);border-color:var(--sel)}
+#trips button[aria-pressed=true] small{color:inherit;opacity:.7}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td{padding:6px 0;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+#msg{font-size:13px;color:var(--bad)}
+main{position:relative;min-height:0}
+#map{position:absolute;inset:0;background:var(--bg)}
+#empty{position:absolute;inset:0;display:grid;place-items:center;z-index:500;pointer-events:none;color:var(--mute);text-align:center;padding:24px}
+#busy{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:600;background:var(--sel);color:var(--selink);padding:6px 14px;border-radius:20px;font-size:13px;display:none}
+.mock{font-size:12px;color:var(--mute);display:flex;gap:6px;align-items:center;margin-top:8px}
+@media(max-width:760px){body{grid-template-columns:1fr;grid-template-rows:auto 60vh}aside{border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<aside>
+  <div>
+    <h1>PathSnap</h1>
+    <p class="sub">Select an evaluation trip. The server reconstructs the route and scores it.</p>
+  </div>
+
+  <section>
+    <label for="api">API address (Laptop 1)</label>
+    <div class="row"><input id="api" type="text" value="http://localhost:8000" spellcheck="false"><button id="conn">Connect</button></div>
+    <div id="status"><span class="dot" id="dot"></span><span id="stext">Not connected</span></div>
+    <label class="mock"><input type="checkbox" id="mock"> Use mock data (no API needed)</label>
+  </section>
+
+  <section>
+    <h2>Trips</h2>
+    <div id="trips"></div>
+  </section>
+
+  <section id="resbox" hidden>
+    <h2>Results</h2>
+    <table id="metrics"></table>
+  </section>
+  <div id="msg" role="alert"></div>
+</aside>
+
+<main>
+  <div id="map"></div>
+  <div id="empty"><div>Connect to the API, then choose a trip to see the GPS trace and predicted route.</div></div>
+  <div id="busy">Running the prediction pipeline…</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-const map=L.map('map').setView([52.95,-1.85],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-let layers=[];const $=id=>document.getElementById(id);
-async function load(){try{const r=await fetch($('api').value+'/trips');const j=await r.json();
-$('trips').innerHTML=j.trips.map(t=>`<button onclick="run('${t}',this)">${t}</button>`).join('');$('status').textContent=j.trips.length+' trips available'}catch(e){$('status').textContent='Cannot reach API: '+e}}
-async function run(t,b){document.querySelectorAll('#trips button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');$('status').textContent='Running pipeline on '+t+' ...';
-try{const r=await fetch($('api').value+'/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({trip_id:t})});const j=await r.json();if(!r.ok)throw j.detail;
-layers.forEach(l=>map.removeLayer(l));layers=[];
-const g=L.layerGroup(j.gps.filter((_,i)=>i%3==0).map(p=>L.circleMarker(p,{radius:2,color:'#1f77ff',weight:1}))).addTo(map);
-const rt=L.layerGroup(j.predicted_route.map(s=>L.polyline(s,{color:'#e41a1c',weight:4}))).addTo(map);layers=[g,rt];map.fitBounds(L.latLngBounds(j.gps));
-const m=j.metrics,f=x=>(100*x).toFixed(2)+'%';
-$('status').textContent='Done in '+j.inference_seconds+' s';
-$('res').innerHTML=`<table><tr><th>Trip ${j.trip_id}</th><th>Classifier only</th><th>Classifier + HMM</th></tr>
-<tr><td>Top-1 accuracy</td><td>${f(m.classifier_only.top1_accuracy)}</td><td><b>${f(m.classifier_plus_hmm.top1_accuracy)}</b></td></tr>
-<tr><td>Route continuity</td><td>${f(m.classifier_only.route_continuity)}</td><td>${f(m.classifier_plus_hmm.route_continuity)}</td></tr>
-<tr><td>Route arc F1</td><td colspan=2>${f(m.route_arc_f1)} (P ${f(m.route_arc_precision)} / R ${f(m.route_arc_recall)})</td></tr>
-<tr><td>GPS points</td><td colspan=2>${j.n_gps}</td></tr></table>`}catch(e){$('status').textContent='Error: '+JSON.stringify(e)}}
-load();
-</script></body></html>
+const $ = id => document.getElementById(id);
+const COLORS = {gps: getComputedStyle(document.documentElement).getPropertyValue('--gps').trim() || '#1f5fd6',
+                route: getComputedStyle(document.documentElement).getPropertyValue('--route').trim() || '#d9381e'};
+let map, layers = {}, control, legend, selected = null;
+
+function initMap(){
+  map = L.map('map').setView([52.96, -1.85], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {maxZoom: 19, attribution: '© OpenStreetMap contributors'}).addTo(map);
+}
+
+function setStatus(kind, text){
+  $('dot').className = 'dot ' + (kind || '');
+  $('stext').textContent = text;
+}
+function setMsg(t){ $('msg').textContent = t || ''; }
+
+try { const s = localStorage.getItem('pathsnap_api'); if (s) $('api').value = s; } catch(e){}
+function base(){ return $('api').value.trim().replace(/\/+$/, ''); }
+
+/* ---------- mock data (for testing the UI before the API exists) ---------- */
+function mockTrips(){
+  return Array.from({length: 10}, (_, i) => ({trip_id: 'mock_' + String(i + 1).padStart(2, '0'), n_points: 600 + i * 90}));
+}
+function mockPredict(id){
+  const seed = parseInt(id.slice(-2), 10) || 1;
+  const lat0 = 52.955 + seed * 0.002, lon0 = -1.86 + seed * 0.003;
+  const gps = [], route = [];
+  for (let i = 0; i < 120; i++){
+    const t = i / 119;
+    const lat = lat0 + t * 0.012 + Math.sin(t * 6) * 0.001;
+    const lon = lon0 + t * 0.02;
+    gps.push([lat + (Math.random() - .5) * 0.0004, lon + (Math.random() - .5) * 0.0004]);
+    if (i % 20 === 0 && i < 119){
+      const t2 = (i + 20) / 119;
+      route.push([[lat, lon], [lat0 + Math.min(t2, 1) * 0.012 + Math.sin(Math.min(t2, 1) * 6) * 0.001, lon0 + Math.min(t2, 1) * 0.02]]);
+    }
+  }
+  return {trip_id: id, model_name: 'MOCK DATA (not a real model)', gps, route_coords: route,
+          metrics: {top1_classifier: .81, top1_hmm: .93, macro_f1: .88, route_continuity: .97, inference_ms: 412}};
+}
+
+/* ---------- API calls ---------- */
+async function getTrips(){
+  if ($('mock').checked) return mockTrips();
+  const r = await fetch(base() + '/trips');
+  if (!r.ok) throw new Error('GET /trips returned ' + r.status);
+  const j = await r.json();
+  return j.trips || j;
+}
+async function predict(id){
+  if ($('mock').checked){ await new Promise(r => setTimeout(r, 500)); return mockPredict(id); }
+  const r = await fetch(base() + '/predict', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({trip_id: id})});
+  if (!r.ok) throw new Error('POST /predict returned ' + r.status + ' ' + (await r.text()).slice(0, 120));
+  return r.json();
+}
+
+/* ---------- UI ---------- */
+async function connect(){
+  setMsg(''); setStatus('', 'Connecting…');
+  try { localStorage.setItem('pathsnap_api', $('api').value); } catch(e){}
+  try {
+    const trips = await getTrips();
+    renderTrips(trips);
+    setStatus('ok', $('mock').checked ? 'Mock mode: ' + trips.length + ' trips' : 'Connected: ' + trips.length + ' trips');
+  } catch (e){
+    setStatus('bad', 'Cannot reach the API');
+    setMsg('Check that the API is running, the address is right (use the Laptop 1 IP, not localhost, from Laptop 2), the port is open in the firewall, and CORS is enabled on the server. ' + e.message);
+  }
+}
+
+function renderTrips(trips){
+  const box = $('trips'); box.innerHTML = '';
+  trips.forEach(t => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-pressed', 'false');
+    b.innerHTML = t.trip_id + (t.n_points ? '<small>' + t.n_points + ' points</small>' : '');
+    b.onclick = () => run(t.trip_id, b);
+    box.appendChild(b);
+  });
+}
+
+function fmt(v, pct){
+  if (v === null || v === undefined || isNaN(v)) return 'n/a';
+  return pct ? (v * 100).toFixed(1) + '%' : String(v);
+}
+
+function showMetrics(d){
+  const m = d.metrics || {};
+  const rows = [
+    ['Model', d.model_name || 'n/a'],
+    ['Top-1, classifier only', fmt(m.top1_classifier, 1)],
+    ['Top-1, with HMM', fmt(m.top1_hmm, 1)],
+    ['Macro F1', fmt(m.macro_f1, 1)],
+    ['Route continuity', fmt(m.route_continuity, 1)],
+    ['Inference time', m.inference_ms != null ? m.inference_ms + ' ms' : 'n/a']
+  ];
+  $('metrics').innerHTML = rows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('');
+  $('resbox').hidden = false;
+}
+
+function drawMap(d){
+  Object.values(layers).forEach(l => map.removeLayer(l));
+  if (control) map.removeControl(control);
+  if (legend) map.removeControl(legend);
+  layers = {};
+
+  const gps = d.gps || [];
+  const pts = L.layerGroup(gps.map(p => L.circleMarker(p, {radius: 3, color: COLORS.gps, weight: 1, fillOpacity: .8})));
+  const trace = L.polyline(gps, {color: COLORS.gps, weight: 1, opacity: .35, dashArray: '3 4'});
+  layers['GPS observations'] = L.layerGroup([trace, pts]);
+
+  let segs = d.route_coords || [];
+  if (segs.length && typeof segs[0][0] === 'number') segs = [segs]; // flat polyline -> wrap
+  const rt = L.layerGroup(segs.map(s => L.polyline(s, {color: COLORS.route, weight: 5, opacity: .85})));
+  layers['Predicted route'] = rt;
+
+  Object.values(layers).forEach(l => l.addTo(map));
+  control = L.control.layers(null, layers, {collapsed: false}).addTo(map);
+
+  const bounds = L.featureGroup([trace, ...segs.map(s => L.polyline(s))]).getBounds();
+  if (bounds.isValid()) map.fitBounds(bounds, {padding: [30, 30]});
+
+  const lg = L.control({position: 'bottomright'});
+  lg.onAdd = () => { const el = L.DomUtil.create('div'); el.style.cssText = 'background:var(--panel);color:var(--ink);padding:8px 10px;border-radius:6px;border:1px solid var(--line);font-size:12px;line-height:1.7';
+    el.innerHTML = '<span style="color:' + COLORS.gps + '">●</span> GPS observations<br><span style="color:' + COLORS.route + '">━</span> Predicted route'; return el; };
+  lg.addTo(map); legend = lg;
+}
+
+async function run(id, btn){
+  setMsg('');
+  document.querySelectorAll('#trips button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  btn.setAttribute('aria-pressed', 'true');
+  $('busy').style.display = 'block'; $('empty').style.display = 'none';
+  try {
+    const d = await predict(id);
+    drawMap(d); showMetrics(d);
+  } catch (e){
+    setMsg('Prediction failed for trip ' + id + '. ' + e.message);
+    $('empty').style.display = 'grid';
+  } finally { $('busy').style.display = 'none'; }
+}
+
+$('conn').onclick = connect;
+$('mock').onchange = connect;
+initMap();
+</script>
+</body>
+</html>

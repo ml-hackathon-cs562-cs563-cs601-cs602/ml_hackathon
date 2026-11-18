@@ -14,6 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.pipeline import init_artifacts
 from api.routes import router
+# Import routes with model selection (use these instead for model selection feature)
+# from api.routes_model_selection import router as router_model_selection
 
 logging.basicConfig(
     level=logging.INFO,
@@ -47,6 +49,9 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
+# For model selection feature, use:
+# app.include_router(router_model_selection)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PathSnap - Model Selection Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root {
+  --bg: #eef1ee;
+  --panel: #fbfcfb;
+  --ink: #17231f;
+  --mute: #5d6e67;
+  --line: #d3dcd7;
+  --gps: #1f5fd6;
+  --route: #d9381e;
+  --ok: #1b7a4b;
+  --bad: #b3261e;
+  --sel: #17231f;
+  --selink: #fbfcfb;
+  --accent: #2563eb;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1714;
+    --panel: #17231f;
+    --ink: #e6efe9;
+    --mute: #93a69c;
+    --line: #2b3b35;
+    --gps: #6ea0ff;
+    --route: #ff6b4d;
+    --ok: #5fd394;
+    --bad: #ff8a80;
+    --sel: #e6efe9;
+    --selink: #0f1714;
+    --accent: #60a5fa;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  grid-template-rows: 100%;
+}
+aside {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+h1 {
+  font: 700 26px/1.1 Georgia, "Times New Roman", serif;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+h2 {
+  font: 600 14px/1.2 Georgia, serif;
+  margin: 0 0 10px;
+  color: var(--mute);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+p.sub { margin: 4px 0 0; color: var(--mute); font-size: 13px; }
+label { display: block; font-size: 13px; color: var(--mute); margin-bottom: 6px; font-weight: 500; }
+input[type="text"], select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+input[type="text"]:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.row { display: flex; gap: 8px; align-items: center; }
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+button:hover { border-color: var(--ink); background: var(--bg); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+button.primary:hover { background: #1d4ed8; }
+button.success { background: var(--ok); color: white; border-color: var(--ok); }
+#status {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  min-height: 24px;
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mute); }
+.dot.ok { background: var(--ok); }
+.dot.bad { background: var(--bad); }
+.dot.loading { background: var(--accent); animation: pulse 1s infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.section { padding: 12px 0; border-top: 1px solid var(--line); }
+.section:first-of-type { border-top: none; }
+
+#trips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#trips button {
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  padding: 8px 10px;
+}
+#trips button small { display: block; color: var(--mute); font-size: 11px; margin-top: 2px; }
+#trips button[aria-pressed="true"] {
+  background: var(--sel);
+  color: var(--selink);
+  border-color: var(--sel);
+}
+#trips button[aria-pressed="true"] small { color: inherit; opacity: 0.75; }
+
+.model-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.model-card:hover { border-color: var(--ink); }
+.model-card.selected {
+  border-color: var(--accent);
+  background: rgba(37, 99, 235, 0.08);
+}
+.model-card input[type="radio"] { margin-right: 8px; }
+.model-card .name { font-weight: 600; }
+.model-card .meta { font-size: 12px; color: var(--mute); margin-top: 4px; }
+.model-card .metrics { font-size: 11px; color: var(--mute); margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+td { padding: 8px 0; border-bottom: 1px solid var(--line); }
+td:first-child { color: var(--mute); }
+td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+#msg { font-size: 13px; color: var(--bad); background: rgba(179, 38, 30, 0.1); padding: 10px; border-radius: 8px; }
+
+main { position: relative; min-height: 0; }
+#map { position: absolute; inset: 0; background: var(--bg); }
+#empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 500;
+  pointer-events: none;
+  color: var(--mute);
+  text-align: center;
+  padding: 24px;
+  font-size: 15px;
+}
+#busy {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  background: var(--accent);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  display: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.legend {
+  background: var(--panel);
+  color: var(--ink);
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+@media (max-width: 900px) {
+  body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 60vh;
+  }
+  aside {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+}
+</style>
+</head>
+<body>
+<aside>
+  <div>
+    <h1>PathSnap</h1>
+    <p class="sub">GPS Map-Matching with ML + HMM/Viterbi Decoder</p>
+  </div>
+
+  <div class="section">
+    <label for="api">API Server Address (Laptop 1)</label>
+    <div class="row">
+      <input id="api" type="text" value="http://localhost:8000" spellcheck="false" placeholder="http://192.168.1.100:8000">
+      <button id="conn" class="primary">Connect</button>
+    </div>
+    <div id="status">
+      <span class="dot" id="dot"></span>
+      <span id="stext">Not connected</span>
+    </div>
+  </div>
+
+  <div class="section" id="modelSection" style="display: none;">
+    <h2>Select Model</h2>
+    <div id="models"></div>
+    <div style="margin-top: 10px; font-size: 12px; color: var(--mute);">
+      <small>Selected model will be used for all predictions</small>
+    </div>
+  </div>
+
+  <div class="section" id="tripsSection" style="display: none;">
+    <h2>Select Trip</h2>
+    <div id="trips"></div>
+  </div>
+
+  <div class="section" id="resultsSection" style="display: none;">
+    <h2>Results</h2>
+    <table id="metrics"></table>
+  </div>
+
+  <div id="msg" role="alert" style="display: none;"></div>
+</aside>
+
+<main>
+  <div id="map"></div>
+  <div id="empty">
+    <div>
+      <strong>Welcome to PathSnap</strong><br><br>
+      1. Enter the API address (use Laptop 1's IP from Laptop 2)<br>
+      2. Click Connect<br>
+      3. Select a model<br>
+      4. Choose a trip to predict
+    </div>
+  </div>
+  <div id="busy">Running prediction pipeline…</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const COLORS = {
+  gps: getComputedStyle(document.documentElement).getPropertyValue('--gps').trim() || '#1f5fd6',
+  route: getComputedStyle(document.documentElement).getPropertyValue('--route').trim() || '#d9381e'
+};
+
+let map, layers = {}, control, legend;
+let selectedModel = null;
+let selectedTrip = null;
+let connected = false;
+
+// Initialize map
+function initMap() {
+  map = L.map('map').setView([52.96, -1.85], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+}
+
+// Status helpers
+function setStatus(kind, text) {
+  const dot = $('dot');
+  dot.className = 'dot ' + (kind || '');
+  $('stext').textContent = text;
+}
+
+function setMsg(text, isError = true) {
+  const msg = $('msg');
+  if (text) {
+    msg.textContent = text;
+    msg.style.display = 'block';
+    msg.style.background = isError ? 'rgba(179, 38, 30, 0.1)' : 'rgba(27, 122, 75, 0.1)';
+    msg.style.color = isError ? 'var(--bad)' : 'var(--ok)';
+  } else {
+    msg.style.display = 'none';
+  }
+}
+
+function showBusy(show) {
+  $('busy').style.display = show ? 'block' : 'none';
+}
+
+// Load saved API address
+try {
+  const saved = localStorage.getItem('pathsnap_api');
+  if (saved) $('api').value = saved;
+} catch (e) {}
+
+function base() {
+  return $('api').value.trim().replace(/\/+$/, '');
+}
+
+// API calls
+async function apiGet(endpoint) {
+  const r = await fetch(base() + endpoint);
+  if (!r.ok) throw new Error(`GET ${endpoint} returned ${r.status}`);
+  return r.json();
+}
+
+async function apiPost(endpoint, body) {
+  const r = await fetch(base() + endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`POST ${endpoint} returned ${r.status}: ${text.slice(0, 200)}`);
+  }
+  return r.json();
+}
+
+// Connect to API
+async function connect() {
+  setMsg('');
+  setStatus('loading', 'Connecting…');
+  
+  try {
+    localStorage.setItem('pathsnap_api', $('api').value);
+  } catch (e) {}
+
+  try {
+    // Get models
+    const modelsData = await apiGet('/models');
+    renderModels(modelsData.models || modelsData);
+
+    // Get trips
+    const tripsData = await apiGet('/trips');
+    renderTrips(tripsData.trips || tripsData);
+
+    setStatus('ok', 'Connected');
+    connected = true;
+    $('modelSection').style.display = 'block';
+    $('tripsSection').style.display = 'block';
+    setMsg('Connected successfully! Select a model and trip.', false);
+  } catch (e) {
+    setStatus('bad', 'Connection failed');
+    setMsg('Cannot reach API. Check:\n' +
+      '• API is running on Laptop 1\n' +
+      '• Correct IP address (not localhost from Laptop 2)\n' +
+      '• Firewall allows port 8000\n\n' +
+      'Error: ' + e.message);
+    connected = false;
+  }
+}
+
+// Render models
+function renderModels(models) {
+  const box = $('models');
+  box.innerHTML = '';
+
+  models.forEach((m, idx) => {
+    const card = document.createElement('div');
+    card.className = 'model-card' + (idx === 0 ? ' selected' : '');
+    card.innerHTML = `
+      <div style="display: flex; align-items: start; gap: 8px;">
+        <input type="radio" name="model" value="${m.name}" ${idx === 0 ? 'checked' : ''}>
+        <div style="flex: 1;">
+          <div class="name">${m.display_name || m.name}</div>
+          <div class="meta">${m.family || ''} ${m.calibrated ? '(calibrated)' : ''}</div>
+          ${m.metrics ? `
+          <div class="metrics">
+            Top-1: ${(m.metrics.top1 * 100).toFixed(1)}% |
+            F1: ${(m.metrics.f1 * 100).toFixed(1)}% |
+            LogLoss: ${m.metrics.log_loss.toFixed(4)}
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    card.onclick = () => selectModel(m.name, card);
+    box.appendChild(card);
+
+    if (idx === 0) {
+      selectedModel = m.name;
+    }
+  });
+}
+
+function selectModel(name, card) {
+  selectedModel = name;
+  document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  card.querySelector('input[type="radio"]').checked = true;
+
+  // Notify server of model selection
+  apiPost('/select_model', { model: name }).catch(e => console.warn('Failed to set model:', e));
+}
+
+// Render trips
+function renderTrips(trips) {
+  const box = $('trips');
+  box.innerHTML = '';
+
+  trips.forEach(t => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-pressed', 'false');
+    const tripId = typeof t === 'string' ? t : t.trip_id;
+    const nPoints = t.n_points;
+    b.innerHTML = tripId + (nPoints ? `<small>${nPoints} points</small>` : '');
+    b.onclick = () => runPrediction(tripId, b);
+    box.appendChild(b);
+  });
+}
+
+// Run prediction
+async function runPrediction(tripId, btn) {
+  if (!selectedModel) {
+    setMsg('Please select a model first');
+    return;
+  }
+
+  setMsg('');
+  showBusy(true);
+  $('empty').style.display = 'none';
+
+  // Update trip selection UI
+  document.querySelectorAll('#trips button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  btn.setAttribute('aria-pressed', 'true');
+  selectedTrip = tripId;
+
+  try {
+    const data = await apiPost('/predict', {
+      trip_id: tripId,
+      model: selectedModel
+    });
+
+    drawMap(data);
+    showMetrics(data);
+    $('resultsSection').style.display = 'block';
+  } catch (e) {
+    setMsg('Prediction failed: ' + e.message);
+    $('empty').style.display = 'grid';
+  } finally {
+    showBusy(false);
+  }
+}
+
+// Show metrics
+function showMetrics(data) {
+  const m = data.metrics || {};
+  const rows = [
+    ['Model', data.model_name || selectedModel || 'N/A'],
+    ['Trip ID', data.trip_id || 'N/A'],
+    ['GPS Points', data.n_gps || 'N/A'],
+    ['Inference Time', data.inference_seconds ? (data.inference_seconds * 1000).toFixed(0) + ' ms' : 'N/A'],
+    ['─', '─'],
+    ['Top-1 (Classifier)', fmt(m.top1_classifier, true)],
+    ['Top-1 (HMM)', fmt(m.top1_hmm, true)],
+    ['Macro F1', fmt(m.macro_f1, true)],
+    ['Route Continuity', fmt(m.route_continuity, true)],
+    ['Log Loss', m.log_loss ? m.log_loss.toFixed(4) : 'N/A'],
+  ];
+
+  $('metrics').innerHTML = rows.map(r =>
+    `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`
+  ).join('');
+}
+
+function fmt(v, pct) {
+  if (v === null || v === undefined || isNaN(v)) return 'N/A';
+  return pct ? (v * 100).toFixed(1) + '%' : String(v);
+}
+
+// Draw map
+function drawMap(data) {
+  Object.values(layers).forEach(l => map.removeLayer(l));
+  if (control) map.removeControl(control);
+  if (legend) map.removeControl(legend);
+  layers = {};
+
+  // GPS observations
+  const gps = data.gps || [];
+  const gpsPoints = L.layerGroup(gps.map(p =>
+    L.circleMarker(p, {
+      radius: 4,
+      color: COLORS.gps,
+      weight: 1,
+      fillOpacity: 0.8
+    })
+  ));
+  const gpsTrace = L.polyline(gps, {
+    color: COLORS.gps,
+    weight: 1,
+    opacity: 0.35,
+    dashArray: '3 4'
+  });
+  layers['GPS Observations'] = L.layerGroup([gpsTrace, gpsPoints]);
+
+  // Predicted route
+  let routeSegments = data.predicted_route || data.route_coords || [];
+  if (routeSegments.length && typeof routeSegments[0][0] === 'number') {
+    routeSegments = [routeSegments];
+  }
+  const routeLayer = L.layerGroup(routeSegments.map(s =>
+    L.polyline(s, {
+      color: COLORS.route,
+      weight: 5,
+      opacity: 0.85
+    })
+  ));
+  layers['Predicted Route'] = routeLayer;
+
+  // Add layers to map
+  Object.values(layers).forEach(l => l.addTo(map));
+
+  // Layer control
+  control = L.control.layers(null, layers, { collapsed: false }).addTo(map);
+
+  // Fit bounds
+  const allFeatures = [gpsTrace, ...routeSegments.map(s => L.polyline(s))];
+  const bounds = L.featureGroup(allFeatures).getBounds();
+  if (bounds.isValid()) {
+    map.fitBounds(bounds, { padding: [30, 30] });
+  }
+
+  // Legend
+  legend = L.control({ position: 'bottomright' });
+  legend.onAdd = () => {
+    const el = L.DomUtil.create('div', 'legend');
+    el.innerHTML = `
+      <span style="color:${COLORS.gps}">●</span> GPS Observations<br>
+      <span style="color:${COLORS.route}">━</span> Predicted Route
+    `;
+    return el;
+  };
+  legend.addTo(map);
+}
+
+// Event listeners
+$('conn').onclick = connect;
+$('api').addEventListener('keypress', e => {
+  if (e.key === 'Enter') connect();
+});
+
+// Initialize
+initMap();
+</script>
+</body>
+</html>

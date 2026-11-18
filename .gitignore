@@ -180,12 +180,6 @@ site/
 !results/.gitkeep
 !hpo/studies/.gitkeep
 
-# Jupyter
-.ipynb_checkpoints/
-# Generated model artifacts
-*.joblib
-*.pkl
-*.pt
 # --------------------------------------------
 # Notes and Comments
 # --------------------------------------------
@@ -193,3 +187,13 @@ site/
 # Raw data policy: Check with organizers before committing
 # Model binaries: Use Git LFS for files >50MB
 # Evaluator data: NEVER commit api/server_data/
+# Colab upload bundles (contain raw data, never commit)
+colab_upload/
+work_local/
+
+# --------------------------------------------
+# Member D specific ignores
+# --------------------------------------------
+# Colab upload bundles (contain raw data, never commit)
+colab_upload/
+work_local/
