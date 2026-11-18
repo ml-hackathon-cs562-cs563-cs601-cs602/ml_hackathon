@@ -1,0 +1,21 @@
+{
+  "run_id": "run_gaussiannb_v0",
+  "model": "GaussianNB",
+  "family": "probabilistic generative classifier",
+  "author": "Member C",
+  "config_path": "configs/models/gaussiannb.yaml",
+  "seed": 42,
+  "features_version": "v0",
+  "cv_macro_f1": 0.7657093196827407,
+  "student_top1": 0.6172755741127348,
+  "student_macro_f1": 0.760076334494375,
+  "log_loss": 0.5213799648221362,
+  "train_time_s": 0.22238419999484904,
+  "infer_time_s": 0.05074619999504648,
+  "git_commit": "45900bc",
+  "extra_metrics": {
+    "cv_macro_f1_std": 0.012421406308607946,
+    "route_continuity": 0.2913838120104439,
+    "candidate_miss_rate": 0.09378914405010438
+  }
+}

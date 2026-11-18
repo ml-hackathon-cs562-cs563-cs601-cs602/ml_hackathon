@@ -1,0 +1,21 @@
+{
+  "run_id": "run_logisticregression_v0",
+  "model": "LogisticRegression",
+  "family": "linear probabilistic classifier",
+  "author": "Member C",
+  "config_path": "configs/models/logisticregression.yaml",
+  "seed": 42,
+  "features_version": "v0",
+  "cv_macro_f1": 0.731474196029069,
+  "student_top1": 0.6717118997912317,
+  "student_macro_f1": 0.7327808375229731,
+  "log_loss": 0.3476629531994028,
+  "train_time_s": 0.37410349999845494,
+  "infer_time_s": 0.03585110000858549,
+  "git_commit": "45900bc",
+  "extra_metrics": {
+    "cv_macro_f1_std": 0.014563318585600034,
+    "route_continuity": 0.2795822454308094,
+    "candidate_miss_rate": 0.09378914405010438
+  }
+}

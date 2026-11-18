@@ -93,11 +93,11 @@ models/*/*.json
 # Experiments and Results
 # --------------------------------------------
 # Experiment runs (JSON logs can be committed)
-experiments/runs/*.json
+!experiments/runs/*.json
 experiments/logs/
 
 # Results (generated from experiments)
-results/*.csv
+!results/*.csv
 results/*.png
 results/*.jpg
 results/*.pdf
