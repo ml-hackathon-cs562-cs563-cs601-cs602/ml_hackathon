@@ -1,6 +1,197 @@
-# Ignore before first commit:
-# data/raw/, data/interim/, data/features/ (until organisers confirm raw data policy)
-# api/server_data/ (evaluator ground truth, must never be committed)
-# .env, .venv/, __pycache__/, *.pyc, .ipynb_checkpoints/
-# Model binaries: *.pkl, *.joblib, *.pt (use Git LFS or release assets instead)
-# Owner: whoever creates the repo (Hour 0).
+# ============================================
+# PathSnap .gitignore
+# ============================================
+
+# --------------------------------------------
+# Python
+# --------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --------------------------------------------
+# Virtual Environments
+# --------------------------------------------
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# --------------------------------------------
+# Jupyter Notebooks
+# --------------------------------------------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# --------------------------------------------
+# Data Files (Raw and Interim)
+# --------------------------------------------
+# Raw data - check with organizers before committing
+data/raw/
+data/interim/
+
+# Features - generated from raw data
+data/features/*.parquet
+data/features/*.csv
+data/features/*.feather
+
+# Keep .gitkeep files
+!data/**/.gitkeep
+
+# --------------------------------------------
+# API Server Data (EVALUATOR GROUND TRUTH)
+# --------------------------------------------
+# CRITICAL: Never commit evaluator ground truth
+api/server_data/
+!api/server_data/.gitkeep
+
+# --------------------------------------------
+# Model Artifacts (Large Files)
+# --------------------------------------------
+# Model binaries - use Git LFS or release assets
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.h5
+*.onnx
+
+# LightGBM models
+*.txt
+!configs/**/*.txt
+!docs/**/*.txt
+
+# Model directories (except code)
+models/*/*.joblib
+models/*/*.pkl
+models/*/*.scaler
+models/*/*.json
+
+# --------------------------------------------
+# Experiments and Results
+# --------------------------------------------
+# Experiment runs (JSON logs can be committed)
+experiments/runs/*.json
+experiments/logs/
+
+# Results (generated from experiments)
+results/*.csv
+results/*.png
+results/*.jpg
+results/*.pdf
+results/*.html
+
+# Keep README files
+!results/README.md
+
+# --------------------------------------------
+# HPO Studies (Optuna)
+# --------------------------------------------
+hpo/studies/*.pkl
+hpo/studies/*.db
+hpo/studies/*.csv
+
+# --------------------------------------------
+# Artifacts (Final Models)
+# --------------------------------------------
+# Final model artifacts - use Git LFS or release
+artifacts/*.txt
+artifacts/*.joblib
+artifacts/*.pkl
+artifacts/*.scaler
+
+# Keep README
+!artifacts/README.md
+
+# --------------------------------------------
+# IDE and Editor
+# --------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --------------------------------------------
+# Secrets and Credentials
+# --------------------------------------------
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+credentials.json
+secrets.json
+
+# --------------------------------------------
+# OS Generated
+# --------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --------------------------------------------
+# Temporary and Cache
+# --------------------------------------------
+*.log
+*.tmp
+*.temp
+.cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --------------------------------------------
+# Documentation Builds
+# --------------------------------------------
+docs/_build/
+site/
+
+# --------------------------------------------
+# Specific Project Files
+# --------------------------------------------
+# Keep these directories in git but ignore contents
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/features/.gitkeep
+!api/server_data/.gitkeep
+!experiments/runs/.gitkeep
+!results/.gitkeep
+!hpo/studies/.gitkeep
+
+# --------------------------------------------
+# Notes and Comments
+# --------------------------------------------
+# Owner: Member D (updated November 2026)
+# Raw data policy: Check with organizers before committing
+# Model binaries: Use Git LFS for files >50MB
+# Evaluator data: NEVER commit api/server_data/
