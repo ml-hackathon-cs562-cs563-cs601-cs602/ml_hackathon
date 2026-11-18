@@ -1,0 +1,4 @@
+# Decision Tree config. Family: tree-based.
+# Replaces Gaussian Naive Bayes so the five models come from five distinct families.
+# Team must confirm this swap (see .agents/context/open_questions.md).
+# Owner: C.

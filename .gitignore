@@ -1,0 +1,6 @@
+# Ignore before first commit:
+# data/raw/, data/interim/, data/features/ (until organisers confirm raw data policy)
+# api/server_data/ (evaluator ground truth, must never be committed)
+# .env, .venv/, __pycache__/, *.pyc, .ipynb_checkpoints/
+# Model binaries: *.pkl, *.joblib, *.pt (use Git LFS or release assets instead)
+# Owner: whoever creates the repo (Hour 0).

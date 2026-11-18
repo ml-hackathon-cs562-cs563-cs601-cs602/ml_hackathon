@@ -1,0 +1,3 @@
+# Shallow or deep MLP config. Family: neural network.
+# Only model that produces epoch-wise histories, so only this model gets loss curves.
+# Owner: D.

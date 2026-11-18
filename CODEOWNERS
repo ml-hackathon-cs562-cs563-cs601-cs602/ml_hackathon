@@ -1,0 +1,6 @@
+# Format: <path> @github-username, one line per area.
+# api/ ui/ viz/ report/sections/2_2_eda.md report/sections/6_folium_maps.md -> member A
+# src/pathsnap/candidates/ src/pathsnap/features/ src/pathsnap/labels/ src/pathsnap/hmm/ -> member B
+# src/pathsnap/evaluation/ models/logreg/ models/dtree/ models/rf/ -> member C
+# models/lgbm/ models/mlp/ hpo/ -> member D
+# configs/ docs/ -> announced group-wide changes, all members reviewed

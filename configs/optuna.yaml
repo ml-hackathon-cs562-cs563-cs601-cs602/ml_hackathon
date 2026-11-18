@@ -1,0 +1,5 @@
+# Bayesian (TPE) hyperparameter search for the chosen model.
+# search_space: justified ranges per hyperparameter.
+# objective: CV macro F1 (state the choice and reason in the report).
+# n_trials: about 30 to 50, agreed by team.
+# Owner: D. Must use only training trips, never student or evaluator trips to choose the space.

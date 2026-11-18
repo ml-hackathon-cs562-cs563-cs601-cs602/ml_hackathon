@@ -1,0 +1,5 @@
+# Dataset paths, projected CRS, candidate parameters.
+# crs: EPSG:32630 (UTM zone 30N). Verify the zone against the actual coordinates first.
+# candidate_k: number of nearest arcs per GPS point (set by candidate miss rate, owner B).
+# candidate_radius_m: search radius in metres (set by candidate miss rate, owner B).
+# Owner: B. Read by every pipeline; do not hardcode these values in code.

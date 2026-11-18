@@ -1,0 +1,4 @@
+# Feature switches and version id.
+# features_version: v0 (first build) then v1 (full feature set).
+# neighbour_offsets: [-1, +1] for point t-1 and t+1 context features.
+# Owner: B.

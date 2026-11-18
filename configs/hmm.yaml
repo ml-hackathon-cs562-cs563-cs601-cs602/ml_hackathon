@@ -1,0 +1,4 @@
+# HMM / Viterbi decoder parameters.
+# emission_weight, transition weights for same-arc, connected-arc and hop-distance cases.
+# gap_policy: how to handle missing candidates and large GPS gaps.
+# Owner: B. Tune on training and student-test trips only.

@@ -1,0 +1,7 @@
+# Trip partitions. Written once, never changed after Hour 0.
+# seed: fixed integer used to create the split.
+# n_folds: 5 (GroupKFold by trip).
+# train_trips: 80 trip IDs (training, CV, optimisation).
+# student_trips: 10 trip IDs (development comparisons).
+# evaluator_trips: 10 trip IDs only. No labels here. Used by the UI list and API only.
+# Owner: C. Rule: no trip may appear in more than one partition.

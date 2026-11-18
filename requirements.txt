@@ -1,0 +1,4 @@
+# Intended packages (pin exact versions when first installed, then commit):
+# numpy, pandas, scikit-learn, lightgbm, pyproj, shapely, pyarrow, pyyaml,
+# optuna, folium, matplotlib, seaborn, fastapi, uvicorn, streamlit, requests, pytest.
+# Owner: C (shared harness). Confirm Python version with team first.
