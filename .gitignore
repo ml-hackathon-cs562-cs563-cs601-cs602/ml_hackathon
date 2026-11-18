@@ -4,3 +4,22 @@
 # .env, .venv/, __pycache__/, *.pyc, .ipynb_checkpoints/
 # Model binaries: *.pkl, *.joblib, *.pt (use Git LFS or release assets instead)
 # Owner: whoever creates the repo (Hour 0).
+# Local datasets - never commit extracted raw data
+data/raw/
+data/interim/
+data/features/
+
+# Python virtual environments and cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Secrets and local environment
+.env
+
+# Evaluator ground truth
+api/server_data/
+
+# Jupyter
+.ipynb_checkpoints/
