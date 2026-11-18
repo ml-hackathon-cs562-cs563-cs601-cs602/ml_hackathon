@@ -1,26 +1,72 @@
-"""Geometric distance calculations between GPS points and road segments.
 
-Owner: Member B
-"""
+"""Metric geometry utilities for GPS-to-road candidate features."""
 
-from __future__ import annotations
-from typing import Tuple
+import math
+
 import numpy as np
 
 
-def seg_dist(
-    P: np.ndarray, A: np.ndarray, B: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Compute orthogonal/clipped distance from points P (N,2) to segments A->B (N,2).
-    
-    Returns:
-        dist: Euclidean distance in metres from point P to the closest point on segment AB.
-        t: Relative projection position along segment AB, normalized to [0, 1].
-    """
-    AB = B - A
-    L2 = (AB ** 2).sum(axis=1)
-    L2 = np.where(L2 == 0, 1e-9, L2)
-    t = np.clip(((P - A) * AB).sum(axis=1) / L2, 0.0, 1.0)
-    C = A + AB * t[:, None]
-    dist = np.sqrt(((P - C) ** 2).sum(axis=1))
-    return dist, t
+def point_to_segment_distance(
+    point: tuple[float, float],
+    start: tuple[float, float],
+    end: tuple[float, float],
+) -> float:
+    """Return the shortest distance from a point to a segment, in metres."""
+    p = np.asarray(point, dtype=float)
+    a = np.asarray(start, dtype=float)
+    b = np.asarray(end, dtype=float)
+
+    segment = b - a
+    length_squared = float(np.dot(segment, segment))
+
+    if length_squared == 0:
+        return float(np.linalg.norm(p - a))
+
+    t = float(np.dot(p - a, segment) / length_squared)
+    t = max(0.0, min(1.0, t))
+
+    closest = a + t * segment
+    return float(np.linalg.norm(p - closest))
+
+
+def along_segment_position(
+    point: tuple[float, float],
+    start: tuple[float, float],
+    end: tuple[float, float],
+) -> float:
+    """Return the projected position along a segment, between 0 and 1."""
+    p = np.asarray(point, dtype=float)
+    a = np.asarray(start, dtype=float)
+    b = np.asarray(end, dtype=float)
+
+    segment = b - a
+    length_squared = float(np.dot(segment, segment))
+
+    if length_squared == 0:
+        return 0.0
+
+    t = float(np.dot(p - a, segment) / length_squared)
+    return max(0.0, min(1.0, t))
+
+
+def heading_difference(
+    gps_heading: float,
+    road_heading: float,
+) -> float:
+    """Return the smallest absolute angular difference in degrees."""
+    difference = abs(gps_heading - road_heading) % 360.0
+    return min(difference, 360.0 - difference)
+
+
+def segment_heading(
+    start: tuple[float, float],
+    end: tuple[float, float],
+) -> float:
+    """Return segment heading in degrees clockwise from north."""
+    dx = end[0] - start[0]
+    dy = end[1] - start[1]
+
+    if dx == 0 and dy == 0:
+        return 0.0
+
+    return math.degrees(math.atan2(dx, dy)) % 360.0

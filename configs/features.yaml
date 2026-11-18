@@ -1,4 +1,19 @@
-# Feature switches and version id.
-# features_version: v0 (first build) then v1 (full feature set).
-# neighbour_offsets: [-1, +1] for point t-1 and t+1 context features.
-# Owner: B.
+
+# Feature-generation settings.
+
+features_version: v0
+
+# Training data
+candidate_input_path: data/interim/candidates_v0.parquet
+features_output_path: data/features/features_v0.parquet
+preprocessed_output_path: data/features/features_v0_scaled.parquet
+preprocessor_artifact_path: artifacts/preprocessor_v0.joblib
+
+# Student-test data
+student_test_candidate_input_path: data/interim/candidates_student_test_v0.parquet
+student_test_features_output_path: data/features/student_test_features_v0.parquet
+student_test_preprocessed_output_path: data/features/student_test_features_v0_scaled.parquet
+
+neighbour_offsets:
+  - -1
+  - 1

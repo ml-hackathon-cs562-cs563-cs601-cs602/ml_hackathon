@@ -1,42 +1,81 @@
-"""Road network transition modeling and hop distance calculation.
+﻿"""Directed road-network transition modeling and hop-distance calculation.
 
 Owner: Member B
 """
 
 from __future__ import annotations
+
 from collections import deque
-from typing import Dict, List, Optional
+from typing import Dict, List, Tuple
+
 import numpy as np
 
 
 class Hop:
-    """Computes and memoizes network hop-reachability up to H intermediate nodes."""
+    """Calculate and cache directed node reachability within H hops."""
 
     def __init__(self, arcs: np.ndarray, H: int = 4) -> None:
+        arcs = np.asarray(arcs)
+
+        if arcs.ndim != 2 or arcs.shape[1] != 2:
+            raise ValueError("arcs must have shape (E, 2).")
+
+        if not isinstance(H, (int, np.integer)) or H < 0:
+            raise ValueError("H must be a non-negative integer.")
+
+        if not np.issubdtype(arcs.dtype, np.integer):
+            if not np.all(np.isfinite(arcs)) or not np.all(arcs == np.floor(arcs)):
+                raise ValueError("Node IDs must be finite integers.")
+
+        arcs = arcs.astype(np.int64)
+
+        if np.any(arcs < 0):
+            raise ValueError("Node IDs must be non-negative.")
+
         self.arcs = arcs
-        self.H = H
-        n_nodes = int(arcs.max()) + 1 if len(arcs) > 0 else 0
-        self.adj: List[List[int]] = [[] for _ in range(n_nodes)]
-        for f, t in arcs:
-            if f < n_nodes:
-                self.adj[f].append(int(t))
+        self.H = int(H)
+
+        # Dictionary adjacency supports sparse and non-contiguous node IDs.
+        self.adj: Dict[int, List[int]] = {}
+
+        for source, destination in arcs:
+            source = int(source)
+            destination = int(destination)
+
+            self.adj.setdefault(source, []).append(destination)
+
         self.memo: Dict[int, Dict[int, int]] = {}
 
     def reach(self, u: int) -> Dict[int, int]:
-        """Return dict of {reachable_node: hop_distance} from node u within H hops."""
-        r = self.memo.get(u)
-        if r is None:
-            r = {u: 0}
-            q = deque([u])
-            while q:
-                x = q.popleft()
-                d = r[x]
-                if d >= self.H:
-                    continue
-                if x < len(self.adj):
-                    for y in self.adj[x]:
-                        if y not in r:
-                            r[y] = d + 1
-                            q.append(y)
-            self.memo[u] = r
-        return r
+        """
+        Return {reachable_node: minimum_hops} from node u.
+
+        The search follows directed edges only and includes the starting
+        node with distance zero.
+        """
+
+        if not isinstance(u, (int, np.integer)) or u < 0:
+            raise ValueError("Starting node must be a non-negative integer.")
+
+        u = int(u)
+
+        if u in self.memo:
+            return self.memo[u]
+
+        distances = {u: 0}
+        queue = deque([u])
+
+        while queue:
+            current = queue.popleft()
+            current_distance = distances[current]
+
+            if current_distance >= self.H:
+                continue
+
+            for neighbour in self.adj.get(current, []):
+                if neighbour not in distances:
+                    distances[neighbour] = current_distance + 1
+                    queue.append(neighbour)
+
+        self.memo[u] = distances
+        return distances

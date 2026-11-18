@@ -180,6 +180,12 @@ site/
 !results/.gitkeep
 !hpo/studies/.gitkeep
 
+# Jupyter
+.ipynb_checkpoints/
+# Generated model artifacts
+*.joblib
+*.pkl
+*.pt
 # --------------------------------------------
 # Notes and Comments
 # --------------------------------------------

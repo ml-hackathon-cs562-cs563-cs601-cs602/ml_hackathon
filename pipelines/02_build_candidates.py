@@ -1,46 +1,74 @@
-"""Pipeline Stage 2: Candidate road arc generation.
 
-Owner: Member B
-"""
+"""Stage 2: Build road-arc candidates for GPS observations."""
 
 from pathlib import Path
-import numpy as np
+import sys
+
 import pandas as pd
+import yaml
 
-from pathsnap.candidates.generate import candidates, candidate_miss_rate, K_CAND, RADIUS
-from pathsnap.geo.projection import Proj
-from pathsnap.ingest.data_loader import Network
-from pathsnap.ingest.parsers import load_trip
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = ROOT / "data" / "raw"
+from data_processing.data_loader import list_trips
+from pathsnap.candidates.generate import generate_candidates
 
 
-def main():
-    print(f"Generating candidate road edges (K={K_CAND}, radius={RADIUS}m)...")
-    summary = []
-    for part in ["train", "student_test"]:
-        part_dir = DATA_DIR / part
-        if not part_dir.exists():
-            continue
-        miss_rates = []
-        for folder in sorted(p for p in part_dir.iterdir() if p.is_dir()):
-            tid = folder.name
-            tr, nd, ar, rt = load_trip(part_dir, tid, with_route=True)
-            proj = Proj(tr[:, 0].mean(), tr[:, 1].mean())
-            net = Network(nd, ar, proj)
-            P = proj(tr[:, 0], tr[:, 1])
-            cand, dist, tpos = candidates(net, P, k=K_CAND, radius=RADIUS)
+def main() -> None:
+    """Generate and save candidate rows for configured trips."""
+    config_path = PROJECT_ROOT / "configs" / "data.yaml"
 
-            if rt is not None and len(rt) > 0:
-                mr = candidate_miss_rate(cand, rt[:len(cand)] if len(rt) >= len(cand) else np.resize(rt, len(cand)))
-                miss_rates.append(mr)
+    with config_path.open("r", encoding="utf-8") as file:
+        config = yaml.safe_load(file) or {}
 
-        avg_mr = float(np.mean(miss_rates)) if miss_rates else 0.0
-        summary.append({"partition": part, "avg_miss_rate": avg_mr})
-        print(f"Partition {part}: Average candidate miss rate = {avg_mr:.4f}")
+    k = int(config["candidate_k"])
+    radius_m = float(config["candidate_radius_m"])
+    trip_limit = config.get("candidate_trip_limit")
 
-    print("Stage 2 candidate generation completed.")
+    if k < 1 or radius_m <= 0:
+        raise ValueError("Invalid candidate K or radius configuration")
+
+    trips = list_trips("train")
+
+    if trip_limit is not None:
+        trips = trips[:int(trip_limit)]
+
+    if not trips:
+        raise ValueError("No training trips found")
+
+    candidate_frames = []
+
+    print(f"Processing {len(trips)} training trips")
+    print(f"K = {k}, radius = {radius_m} metres")
+
+    for index, trip_id in enumerate(trips, start=1):
+        print(f"[{index}/{len(trips)}] Processing trip {trip_id}")
+
+        candidates = generate_candidates(
+            trip_id=trip_id,
+            partition="train",
+            k=k,
+            radius_m=radius_m,
+        )
+
+        candidate_frames.append(candidates)
+
+        print(f"    Candidate rows: {len(candidates)}")
+
+    combined = pd.concat(candidate_frames, ignore_index=True)
+
+    output_dir = PROJECT_ROOT / "data" / "interim"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    output_path = output_dir / "candidates_v0.parquet"
+    combined.to_parquet(output_path, index=False)
+
+    print("\nCandidate generation completed")
+    print(f"Trips processed: {len(trips)}")
+    print(f"Total candidate rows: {len(combined)}")
+    print(f"Unique GPS points: {combined[['trip_id', 'point_idx']].drop_duplicates().shape[0]}")
+    print(f"Output: {output_path.relative_to(PROJECT_ROOT)}")
 
 
 if __name__ == "__main__":
