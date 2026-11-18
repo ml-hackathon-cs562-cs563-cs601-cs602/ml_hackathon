@@ -1,0 +1,21 @@
+{
+  "run_id": "run_randomforest_v0",
+  "model": "RandomForest",
+  "family": "tree ensemble (bagging)",
+  "author": "Member C",
+  "config_path": "configs/models/randomforest.yaml",
+  "seed": 42,
+  "features_version": "v0",
+  "cv_macro_f1": 0.8068697343155552,
+  "student_top1": 0.6897703549060543,
+  "student_macro_f1": 0.8155001038473961,
+  "log_loss": 0.22172402739117414,
+  "train_time_s": 1.0666121000031126,
+  "infer_time_s": 0.28582050000841264,
+  "git_commit": "45900bc",
+  "extra_metrics": {
+    "cv_macro_f1_std": 0.01435950282317309,
+    "route_continuity": 0.2724804177545692,
+    "candidate_miss_rate": 0.09378914405010438
+  }
+}

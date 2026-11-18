@@ -1,3 +1,18 @@
-# Logistic Regression config. Family: linear.
-# Record every hyperparameter and its initial value here (guide asks for both).
-# Owner: C.
+# Logistic Regression configuration for PathSnap candidate scoring.
+# Family: Linear probabilistic classifier
+# Owner: Member C
+
+model_name: LogisticRegression
+algorithm_family: linear probabilistic classifier
+
+params:
+  C: 1.0
+  solver: lbfgs
+  max_iter: 500
+  class_weight: balanced
+  random_state: 42
+
+preprocessing:
+  imputation: median
+  scaling: standard
+objective: binary logistic negative log-likelihood (cross-entropy), optimized by lbfgs

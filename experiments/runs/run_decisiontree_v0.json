@@ -1,0 +1,21 @@
+{
+  "run_id": "run_decisiontree_v0",
+  "model": "DecisionTree",
+  "family": "tree-based",
+  "author": "Member C",
+  "config_path": "configs/models/decisiontree.yaml",
+  "seed": 42,
+  "features_version": "v0",
+  "cv_macro_f1": 0.7752715307949368,
+  "student_top1": 0.676356993736952,
+  "student_macro_f1": 0.7879579326971299,
+  "log_loss": 0.39731382104364876,
+  "train_time_s": 2.518338000001677,
+  "infer_time_s": 0.02857560000848025,
+  "git_commit": "45900bc",
+  "extra_metrics": {
+    "cv_macro_f1_std": 0.016263551754761938,
+    "route_continuity": 0.25545691906005225,
+    "candidate_miss_rate": 0.09378914405010438
+  }
+}
