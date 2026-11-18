@@ -1,5 +1,13 @@
 """Smoke test: shared harness loads candidates and GroupKFold is trip-safe."""
 
+from pathlib import Path
+import sys
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
 import numpy as np
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import GroupKFold

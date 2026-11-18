@@ -51,6 +51,9 @@ def get_model(config_or_path: Union[str, Path, Dict[str, Any]]) -> Any:
     elif "lgbm" in model_key or "lightgbm" in model_key:
         from models.lgbm.model import LightGBMModel
         return LightGBMModel(config)
+    elif "xgb" in model_key or "xgboost" in model_key:
+        from models.xgb.model import XGBoostModel
+        return XGBoostModel(config)
     elif "mlp" in model_key:
         from models.mlp.model import MLPModel
         return MLPModel(config)
