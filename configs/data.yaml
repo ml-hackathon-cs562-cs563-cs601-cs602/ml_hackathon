@@ -5,6 +5,5 @@
 candidate_k: 10
 candidate_radius_m: 100
 
-# Number of training trips for the initial candidate v0 build.
-# Set to null when processing all training trips.
-candidate_trip_limit: 10
+# Process all available training trips.
+candidate_trip_limit: null

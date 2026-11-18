@@ -23,3 +23,7 @@ api/server_data/
 
 # Jupyter
 .ipynb_checkpoints/
+# Generated model artifacts
+*.joblib
+*.pkl
+*.pt
